@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import List, Optional, Iterable, Any
 
-from mdslice.constants import (
+from .constants import (
     _HEADER_RE,
     _FENCE_OPEN_RE,
     _FENCE_CLOSE_RE,
@@ -13,7 +13,7 @@ from mdslice.constants import (
     _SETEXT_H1_RE,
     _SETEXT_H2_RE,
 )
-from mdslice.models import ParsedSection, SectionType, MarkdownDocument
+from .models import ParsedSection, SectionType, MarkdownDocument
 
 
 def _flush(

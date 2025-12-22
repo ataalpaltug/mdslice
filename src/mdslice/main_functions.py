@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from mdslice import MarkdownDocument
-from mdslice.parser import parse_lines
+from .models import MarkdownDocument
+from .parser import parse_lines
 
 
 def parse_markdown_file(file_path: Path) -> MarkdownDocument:
