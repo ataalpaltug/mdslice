@@ -1,8 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import List, Optional, Iterable, Callable, Any
-
+from typing import List, Optional, Iterable, Any
 
 from .constants import (
     _HEADER_RE,
@@ -13,7 +12,7 @@ from .constants import (
     _QUOTE_RE,
     _LIST_RE,
 )
-from .models import ParsedSection, SectionType
+from .models import ParsedSection, SectionType, MarkdownDocument
 
 
 def _flush(
@@ -52,6 +51,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
     This is a lightweight, line-oriented parser intended for simple extraction
     of major block-level elements, not a full CommonMark implementation.
     """
+    # todo: Sections.LINK to extract links from md files
     sections: List[ParsedSection] = []
     current_buffer: List[str] = []
     current_type: SectionType = SectionType.NONE
@@ -116,6 +116,8 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
 
         # Header
         m = _HEADER_RE.match(stripped)
+        # todo: Support for Setext headers:
+        # todo: Supporting === and --- underlines for H1 and H2
         if m:
             # Flush previous buffer as paragraph/list/table
             if current_type != SectionType.NONE:
@@ -156,6 +158,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             continue
 
         # List item
+        #todo: Nested Lists
         if _LIST_RE.match(stripped):
             if current_type not in (SectionType.NONE, SectionType.LIST):
                 _flush(current_buffer, sections, current_type, current_header_depth)
@@ -176,52 +179,3 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
         _flush(current_buffer, sections, current_type, current_header_depth)
 
     return sections
-
-
-class MarkdownDocument:
-    """Object-oriented representation of a Markdown file and its parsed sections."""
-
-    def __init__(
-        self, sections: List[ParsedSection], path: Optional[Path] = None
-    ) -> None:
-        self.path: Optional[Path] = path
-        self.sections: List[ParsedSection] = sections
-
-    def to_dict(self) -> dict[str, Any]:
-        return {
-            "path": str(self.path) if self.path is not None else None,
-            "sections": [
-                {
-                    "type": s.type.name,
-                    "content": s.content,
-                    "header_depth": s.header_depth,
-                    **({"meta": s.meta} if s.meta is not None else {}),
-                }
-                for s in self.sections
-            ],
-        }
-
-    def headers(
-        self, min_depth: Optional[int] = None, max_depth: Optional[int] = None
-    ) -> List[ParsedSection]:
-        result = [s for s in self.sections if s.type == SectionType.HEADER]
-        if min_depth is not None:
-            result = [s for s in result if s.header_depth >= min_depth]
-        if max_depth is not None:
-            result = [s for s in result if s.header_depth <= max_depth]
-        return result
-
-    def find(
-        self, predicate: Callable[[ParsedSection], bool]
-    ) -> Optional[ParsedSection]:
-        return next((s for s in self.sections if predicate(s)), None)
-
-    # End of class
-
-    def of_type(self):
-        ...
-
-    @classmethod
-    def _unused(cls):
-        # placeholder to keep search/replace boundaries clear (no-op)
-        return None

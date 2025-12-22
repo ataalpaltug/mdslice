@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from enum import IntEnum, auto
-from typing import Optional, Any
+from pathlib import Path
+from typing import Optional, Any, List, Callable
 
 
 class SectionType(IntEnum):
@@ -38,3 +39,64 @@ class ParsedSection:
         if self.type == SectionType.HEADER:
             return f"<HEADER h{self.header_depth}: {self.content!r}>"
         return f"<{self.type.name}: {self.content!r}>"
+
+
+class MarkdownDocument:
+    """Object-oriented representation of a Markdown file and its parsed sections."""
+    # todo: Front Matter support
+    # todo: make this class Context Managers
+
+    def __init__(
+        self, sections: List[ParsedSection], path: Optional[Path] = None
+    ) -> None:
+        self.path: Optional[Path] = path
+        self.sections: List[ParsedSection] = sections
+
+    def to_dict(self) -> dict[str, Any]:
+        return {
+            "path": str(self.path) if self.path is not None else None,
+            "sections": [
+                {
+                    "type": s.type.name,
+                    "content": s.content,
+                    "header_depth": s.header_depth,
+                    **({"meta": s.meta} if s.meta is not None else {}),
+                }
+                for s in self.sections
+            ],
+        }
+
+    def headers(
+        self, min_depth: Optional[int] = None, max_depth: Optional[int] = None
+    ) -> List[ParsedSection]:
+        result = [s for s in self.sections if s.type == SectionType.HEADER]
+        if min_depth is not None:
+            result = [s for s in result if s.header_depth >= min_depth]
+        if max_depth is not None:
+            result = [s for s in result if s.header_depth <= max_depth]
+        return result
+
+    def find(
+        self, predicate: Callable[[ParsedSection], bool]
+    ) -> Optional[ParsedSection]:
+        return next((s for s in self.sections if predicate(s)), None)
+
+    # End of class
+
+    def of_type(self):
+        ...
+
+    def __getitem__(self): ...
+
+    def __iter__(self): ...
+
+    def search(self): ...
+    '''Should allow the user to search by regex'''
+
+    def plain_markdown(self): ...
+    '''Should reconstruct markdown from the self.sections'''
+
+    @classmethod
+    def _unused(cls):
+        # placeholder to keep search/replace boundaries clear (no-op)
+        return None
