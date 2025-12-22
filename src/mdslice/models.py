@@ -49,9 +49,9 @@ class MarkdownDocument:
     def __init__(
         self,
         sections: Optional[List[ParsedSection]] = None,
-        path: Optional[Path] = None,
+        f_path: Optional[Path] = None,
     ) -> None:
-        self.path: Optional[Path] = path
+        self.path: Optional[Path] = f_path
         if sections is None:
             self.sections: List[ParsedSection] = []
         else:
@@ -60,6 +60,9 @@ class MarkdownDocument:
     def add_section(self, section: ParsedSection) -> None:
         if isinstance(section, ParsedSection):
             self.sections.append(section)
+
+    def add_path(self, f_path: Path) -> None:
+        self.path = f_path
 
     def to_dict(self) -> dict[str, Any]:
         return {

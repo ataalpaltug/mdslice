@@ -34,7 +34,7 @@ def _flush(
     buffer.clear()
 
 
-def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
+def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
     """Parse an iterable of lines into a list of ParsedSection.
 
     This is a lightweight, line-oriented parser intended for simple extraction
@@ -79,7 +79,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             continue
 
         # Blank line flushes
-        if stripped == "" or stripped == "&nbsp" or stripped == "&nbsp;":
+        if stripped == "" or stripped == "&nbsp;":
             flush_current()
             continue
 
@@ -148,4 +148,4 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             current_buffer.append(raw_line)
 
     flush_current()
-    return md.sections
+    return md
