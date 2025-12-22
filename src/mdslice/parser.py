@@ -1,9 +1,8 @@
 from __future__ import annotations
 
-from pathlib import Path
 from typing import List, Optional, Iterable, Any
 
-from .constants import (
+from mdslice.constants import (
     _HEADER_RE,
     _FENCE_OPEN_RE,
     _FENCE_CLOSE_RE,
@@ -14,7 +13,7 @@ from .constants import (
     _SETEXT_H1_RE,
     _SETEXT_H2_RE,
 )
-from .models import ParsedSection, SectionType, MarkdownDocument
+from mdslice.models import ParsedSection, SectionType, MarkdownDocument
 
 
 def _flush(
@@ -33,19 +32,6 @@ def _flush(
         )
     )
     buffer.clear()
-
-
-def parse_markdown_file(file_path: Path) -> MarkdownDocument:
-    # todo: add file path check
-    with open(file_path, "r", encoding="utf-8") as fid:
-        sections = parse_lines(fid)
-    return MarkdownDocument(sections=sections, path=file_path)
-
-
-def from_text(text: str) -> "MarkdownDocument":
-    lines = text.splitlines(keepends=True)
-    sections = parse_lines(lines)
-    return MarkdownDocument(sections=sections)
 
 
 def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
