@@ -47,10 +47,19 @@ class MarkdownDocument:
     # todo: make this class Context Managers
 
     def __init__(
-        self, sections: List[ParsedSection], path: Optional[Path] = None
+        self,
+        sections: Optional[List[ParsedSection]] = None,
+        path: Optional[Path] = None,
     ) -> None:
         self.path: Optional[Path] = path
-        self.sections: List[ParsedSection] = sections
+        if sections is None:
+            self.sections: List[ParsedSection] = []
+        else:
+            self.sections = sections
+
+    def add_section(self, section: ParsedSection) -> None:
+        if isinstance(section, ParsedSection):
+            self.sections.append(section)
 
     def to_dict(self) -> dict[str, Any]:
         return {

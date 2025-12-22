@@ -19,7 +19,7 @@ from .models import ParsedSection, SectionType, MarkdownDocument
 
 def _flush(
     buffer: List[str],
-    sections: List[ParsedSection],
+    md: MarkdownDocument,
     sec_type: SectionType,
     header_depth: int = 0,
     meta: Optional[dict[str, Any]] = None,
@@ -27,7 +27,7 @@ def _flush(
     if not buffer:
         return
     content = "".join(buffer).rstrip("\n")
-    sections.append(
+    md.add_section(
         ParsedSection(
             type=sec_type, content=content, header_depth=header_depth, meta=meta
         )
@@ -36,15 +36,16 @@ def _flush(
 
 
 def parse_markdown_file(file_path: Path) -> MarkdownDocument:
+    # todo: add file path check
     with open(file_path, "r", encoding="utf-8") as fid:
         sections = parse_lines(fid)
     return MarkdownDocument(sections=sections, path=file_path)
 
 
-def from_text(text: str, path: Optional[Path] = None) -> "MarkdownDocument":
+def from_text(text: str) -> "MarkdownDocument":
     lines = text.splitlines(keepends=True)
     sections = parse_lines(lines)
-    return MarkdownDocument(sections=sections, path=path)
+    return MarkdownDocument(sections=sections)
 
 
 def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
@@ -53,7 +54,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
     This is a lightweight, line-oriented parser intended for simple extraction
     of major block-level elements, not a full CommonMark implementation.
     """
-    sections: List[ParsedSection] = []
+    md = MarkdownDocument()
     current_buffer: List[str] = []
     current_type: SectionType = SectionType.NONE
     current_header_depth = 0
@@ -64,10 +65,10 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
     code_lang: Optional[str] = None
 
     def flush_current():
-        nonlocal current_type, current_header_depth, code_lang
+        nonlocal md, current_type, current_header_depth, code_lang
         if current_type != SectionType.NONE:
             meta = {"lang": code_lang} if current_type == SectionType.CODE and code_lang else None
-            _flush(current_buffer, sections, current_type, current_header_depth, meta=meta)
+            _flush(current_buffer, md, current_type, current_header_depth, meta=meta)
             current_type = SectionType.NONE
             current_header_depth = 0
             code_lang = None
@@ -115,7 +116,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
         if m:
             flush_current()
             hashes, content = m.groups()
-            sections.append(
+            md.add_section(
                 ParsedSection(SectionType.HEADER, content.strip(), header_depth=len(hashes))
             )
             continue
@@ -129,7 +130,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             current_buffer.clear()
             current_type = SectionType.NONE
             depth = 1 if m1 else 2
-            sections.append(ParsedSection(SectionType.HEADER, content, header_depth=depth))
+            md.add_section(ParsedSection(SectionType.HEADER, content, header_depth=depth))
             continue
 
         # Map patterns to types
@@ -145,7 +146,7 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             if regex.match(stripped):
                 if sec_type == SectionType.IMAGE:
                     flush_current()
-                    sections.append(ParsedSection(sec_type, stripped))
+                    md.add_section(ParsedSection(sec_type, stripped))
                 else:
                     if current_type not in (SectionType.NONE, sec_type):
                         flush_current()
@@ -161,4 +162,4 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
             current_buffer.append(raw_line)
 
     flush_current()
-    return sections
+    return md.sections
