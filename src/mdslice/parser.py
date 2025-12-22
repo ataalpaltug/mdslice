@@ -6,12 +6,9 @@ from .constants import (
     _HEADER_RE,
     _FENCE_OPEN_RE,
     _FENCE_CLOSE_RE,
-    _TABLE_RE,
-    _IMAGE_RE,
-    _QUOTE_RE,
-    _LIST_RE,
     _SETEXT_H1_RE,
     _SETEXT_H2_RE,
+    PATTERNS,
 )
 from .models import ParsedSection, SectionType, MarkdownDocument
 
@@ -98,10 +95,10 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
             continue
 
         # Header
-        m = _HEADER_RE.match(stripped)
-        if m:
+        m_header = _HEADER_RE.match(stripped)
+        if m_header:
             flush_current()
-            hashes, content = m.groups()
+            hashes, content = m_header.groups()
             md.add_section(
                 ParsedSection(SectionType.HEADER, content.strip(), header_depth=len(hashes))
             )
@@ -119,16 +116,8 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
             md.add_section(ParsedSection(SectionType.HEADER, content, header_depth=depth))
             continue
 
-        # Map patterns to types
-        patterns = [
-            (_TABLE_RE, SectionType.TABLE),
-            (_IMAGE_RE, SectionType.IMAGE),
-            (_QUOTE_RE, SectionType.QUOTE),
-            (_LIST_RE, SectionType.LIST),
-        ]
-
         matched = False
-        for regex, sec_type in patterns:
+        for regex, sec_type in PATTERNS:
             if regex.match(stripped):
                 if sec_type == SectionType.IMAGE:
                     flush_current()

@@ -1,5 +1,5 @@
 from __future__ import annotations
-
+from .models import SectionType
 import re
 
 
@@ -14,3 +14,10 @@ _QUOTE_RE = re.compile(r"^>\s?")
 _LIST_RE = re.compile(r"^(?:[*+-]|\d+\.)\s+")
 _SETEXT_H1_RE = re.compile(r"^={3,}\s*$")
 _SETEXT_H2_RE = re.compile(r"^-{3,}\s*$")
+
+PATTERNS = [
+    (_TABLE_RE, SectionType.TABLE),
+    (_IMAGE_RE, SectionType.IMAGE),
+    (_QUOTE_RE, SectionType.QUOTE),
+    (_LIST_RE, SectionType.LIST),
+]

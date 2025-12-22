@@ -14,6 +14,6 @@ def parse_markdown_file(file_path: Path) -> MarkdownDocument:
     return md
 
 
-def from_text(text: str) -> "MarkdownDocument":
+def from_text(text: str) -> MarkdownDocument:
     lines = text.splitlines(keepends=True)
     return parse_lines(lines)
