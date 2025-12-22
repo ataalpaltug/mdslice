@@ -129,6 +129,62 @@ Second para
             depths = [s.header_depth for s in doc.sections if s.type == SectionType.HEADER]
             self.assertEqual(depths, [1, 2, 3, 4, 5, 6])
 
+    def test_complex_code_blocks(self):
+        content = """```python
+def foo():
+    pass
+```
+~~~javascript
+console.log("hello");
+~~~
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "code.md", content)
+            doc = parse_markdown_file(md_path)
+            codes = [s for s in doc.sections if s.type == SectionType.CODE]
+            self.assertEqual(len(codes), 2)
+            self.assertEqual(codes[0].meta, {"lang": "python"})
+            self.assertEqual(codes[1].meta, {"lang": "javascript"})
+
+    def test_mixed_content_without_blank_lines(self):
+        content = """# Header
+Paragraph
+- List
+> Quote
+| Table |
+![Image](img.png)
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "mixed.md", content)
+            doc = parse_markdown_file(md_path)
+            types = [s.type for s in doc.sections]
+            expected = [
+                SectionType.HEADER,
+                SectionType.PARAGRAPH,
+                SectionType.LIST,
+                SectionType.QUOTE,
+                SectionType.TABLE,
+                SectionType.IMAGE
+            ]
+            self.assertEqual(types, expected)
+
+    def test_setext_headers(self):
+        content = """Title 1
+=======
+Title 2
+-------
+Paragraph
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "setext.md", content)
+            doc = parse_markdown_file(md_path)
+            headers = [s for s in doc.sections if s.type == SectionType.HEADER]
+            self.assertEqual(len(headers), 2)
+            self.assertEqual(headers[0].content, "Title 1")
+            self.assertEqual(headers[0].header_depth, 1)
+            self.assertEqual(headers[1].content, "Title 2")
+            self.assertEqual(headers[1].header_depth, 2)
+
 
 if __name__ == "__main__":
     unittest.main()

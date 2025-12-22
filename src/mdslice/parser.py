@@ -11,6 +11,8 @@ from .constants import (
     _IMAGE_RE,
     _QUOTE_RE,
     _LIST_RE,
+    _SETEXT_H1_RE,
+    _SETEXT_H2_RE,
 )
 from .models import ParsedSection, SectionType, MarkdownDocument
 
@@ -51,7 +53,6 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
     This is a lightweight, line-oriented parser intended for simple extraction
     of major block-level elements, not a full CommonMark implementation.
     """
-    # todo: Sections.LINK to extract links from md files
     sections: List[ParsedSection] = []
     current_buffer: List[str] = []
     current_type: SectionType = SectionType.NONE
@@ -61,6 +62,15 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
     fence_char: str = ""
     fence_len: int = 0
     code_lang: Optional[str] = None
+
+    def flush_current():
+        nonlocal current_type, current_header_depth, code_lang
+        if current_type != SectionType.NONE:
+            meta = {"lang": code_lang} if current_type == SectionType.CODE and code_lang else None
+            _flush(current_buffer, sections, current_type, current_header_depth, meta=meta)
+            current_type = SectionType.NONE
+            current_header_depth = 0
+            code_lang = None
 
     for raw_line in lines:
         line = raw_line.rstrip("\n")
@@ -75,40 +85,26 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
                 and m_close.group(1)[0] == fence_char
                 and len(m_close.group(1)) >= fence_len
             ):
-                # end of code block
-                _flush(
-                    current_buffer,
-                    sections,
-                    SectionType.CODE,
-                    meta={"lang": code_lang} if code_lang else None,
-                )
+                flush_current()
                 in_code_block = False
-                current_type = SectionType.NONE
                 fence_char = ""
                 fence_len = 0
-                code_lang = None
             continue
 
-        # Blank line flushes paragraph/list/table/quote buffers
+        # Blank line flushes
         if stripped == "" or stripped == "&nbsp" or stripped == "&nbsp;":
-            if current_type != SectionType.NONE:
-                _flush(current_buffer, sections, current_type, current_header_depth)
-                current_type = SectionType.NONE
-                current_header_depth = 0
+            flush_current()
             continue
 
         # Fenced code block start
         m_open = _FENCE_OPEN_RE.match(stripped)
         if m_open:
-            if current_type != SectionType.NONE:
-                _flush(current_buffer, sections, current_type, current_header_depth)
+            flush_current()
             fence = m_open.group(1)
             rest = (m_open.group(2) or "").strip()
-            # Determine language hint as first token in rest if present
             code_lang = rest.split()[0] if rest else None
             in_code_block = True
             current_type = SectionType.CODE
-            current_header_depth = 0
             fence_char = fence[0]
             fence_len = len(fence)
             current_buffer.append(raw_line)
@@ -116,66 +112,53 @@ def parse_lines(lines: Iterable[str]) -> List[ParsedSection]:
 
         # Header
         m = _HEADER_RE.match(stripped)
-        # todo: Support for Setext headers:
-        # todo: Supporting === and --- underlines for H1 and H2
         if m:
-            # Flush previous buffer as paragraph/list/table
-            if current_type != SectionType.NONE:
-                _flush(current_buffer, sections, current_type, current_header_depth)
+            flush_current()
             hashes, content = m.groups()
-            depth = len(hashes)
             sections.append(
-                ParsedSection(SectionType.HEADER, content.strip(), header_depth=depth)
+                ParsedSection(SectionType.HEADER, content.strip(), header_depth=len(hashes))
             )
+            continue
+
+        # Setext Header
+        m1 = _SETEXT_H1_RE.match(stripped)
+        m2 = _SETEXT_H2_RE.match(stripped)
+        if (m1 or m2) and current_type == SectionType.PARAGRAPH:
+            # Re-interpret previous paragraph as header
+            content = "".join(current_buffer).strip()
+            current_buffer.clear()
             current_type = SectionType.NONE
-            current_header_depth = 0
+            depth = 1 if m1 else 2
+            sections.append(ParsedSection(SectionType.HEADER, content, header_depth=depth))
             continue
 
-        # Table rows (simple heuristic)
-        if _TABLE_RE.match(stripped):
-            if current_type not in (SectionType.NONE, SectionType.TABLE):
-                _flush(current_buffer, sections, current_type, current_header_depth)
-            current_type = SectionType.TABLE
-            current_header_depth = 0
+        # Map patterns to types
+        patterns = [
+            (_TABLE_RE, SectionType.TABLE),
+            (_IMAGE_RE, SectionType.IMAGE),
+            (_QUOTE_RE, SectionType.QUOTE),
+            (_LIST_RE, SectionType.LIST),
+        ]
+
+        matched = False
+        for regex, sec_type in patterns:
+            if regex.match(stripped):
+                if sec_type == SectionType.IMAGE:
+                    flush_current()
+                    sections.append(ParsedSection(sec_type, stripped))
+                else:
+                    if current_type not in (SectionType.NONE, sec_type):
+                        flush_current()
+                    current_type = sec_type
+                    current_buffer.append(raw_line)
+                matched = True
+                break
+
+        if not matched:
+            if current_type not in (SectionType.NONE, SectionType.PARAGRAPH):
+                flush_current()
+            current_type = SectionType.PARAGRAPH
             current_buffer.append(raw_line)
-            continue
 
-        # Image
-        if _IMAGE_RE.match(stripped):
-            if current_type != SectionType.NONE:
-                _flush(current_buffer, sections, current_type, current_header_depth)
-            sections.append(ParsedSection(SectionType.IMAGE, stripped))
-            current_type = SectionType.NONE
-            continue
-
-        # Block quote
-        if _QUOTE_RE.match(stripped):
-            if current_type not in (SectionType.NONE, SectionType.QUOTE):
-                _flush(current_buffer, sections, current_type, current_header_depth)
-            current_type = SectionType.QUOTE
-            current_header_depth = 0
-            current_buffer.append(raw_line)
-            continue
-
-        # List item
-        #todo: Nested Lists
-        if _LIST_RE.match(stripped):
-            if current_type not in (SectionType.NONE, SectionType.LIST):
-                _flush(current_buffer, sections, current_type, current_header_depth)
-            current_type = SectionType.LIST
-            current_header_depth = 0
-            current_buffer.append(raw_line)
-            continue
-
-        # Default to paragraph text, append line (preserve original spacing)
-        if current_type not in (SectionType.NONE, SectionType.PARAGRAPH):
-            _flush(current_buffer, sections, current_type, current_header_depth)
-        current_type = SectionType.PARAGRAPH
-        current_header_depth = 0
-        current_buffer.append(raw_line)
-
-    # Flush tail
-    if current_type != SectionType.NONE:
-        _flush(current_buffer, sections, current_type, current_header_depth)
-
+    flush_current()
     return sections
