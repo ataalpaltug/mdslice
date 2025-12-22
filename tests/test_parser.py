@@ -1,0 +1,134 @@
+from __future__ import annotations
+
+import io
+import sys
+import unittest
+from pathlib import Path
+from tempfile import TemporaryDirectory
+
+from mdslice import MarkdownDocument, parse_markdown_file, SectionType
+
+
+MD_SAMPLE = """# Title
+
+Paragraph line 1
+continues here
+
+- item one
+- item two
+
+> quote line 1
+> quote line 2
+
+```
+code
+block
+```
+
+| h1 | h2 |
+|----|----|
+| a  | b  |
+
+![alt](path/to/img.png)
+"""
+
+
+class TestParser(unittest.TestCase):
+    def _write_temp_md(self, tmpdir: str, name: str, content: str) -> Path:
+        p = Path(tmpdir) / name
+        p.write_text(content, encoding="utf-8")
+        return p
+
+    def test_parse_markdown_document_and_path(self):
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "sample.md", MD_SAMPLE)
+            doc = parse_markdown_file(md_path)
+
+            # Path retained
+            self.assertEqual(Path(md_path), doc.path)
+
+            # Ensure we have multiple sections parsed
+            self.assertGreaterEqual(len(doc.sections), 7)
+
+            # Validate first section is a header h1
+            first = doc.sections[0]
+            self.assertEqual(first.type, SectionType.HEADER)
+            self.assertEqual(first.header_depth, 1)
+            self.assertEqual(first.content, "Title")
+
+            # Validate paragraph aggregation
+            para = next(s for s in doc.sections if s.type == SectionType.PARAGRAPH)
+            self.assertIn("Paragraph line 1", para.content)
+            self.assertIn("continues here", para.content)
+
+            # Validate list grouping
+            lst = next(s for s in doc.sections if s.type == SectionType.LIST)
+            self.assertIn("- item one", lst.content)
+            self.assertIn("- item two", lst.content)
+
+            # Validate quote grouping
+            quote = next(s for s in doc.sections if s.type == SectionType.QUOTE)
+            self.assertIn("> quote line 1", quote.content)
+            self.assertIn("> quote line 2", quote.content)
+
+            # Validate code block preserves fences
+            code = next(s for s in doc.sections if s.type == SectionType.CODE)
+            self.assertTrue(code.content.startswith("```\n"))
+            self.assertTrue(code.content.rstrip("\n").endswith("\n```"))
+
+            # Validate table grouping
+            table = next(s for s in doc.sections if s.type == SectionType.TABLE)
+            self.assertIn("| h1 | h2 |", table.content)
+            self.assertIn("|----|----|", table.content)
+
+            # Validate image detection
+            image = next(s for s in doc.sections if s.type == SectionType.IMAGE)
+            self.assertEqual(image.content.strip(), "![alt](path/to/img.png)")
+
+    def test_blank_line_and_nbsp_flush(self):
+        content = """Paragraph before
+
+&nbsp
+Paragraph after
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "nbsp.md", content)
+            doc = parse_markdown_file(md_path)
+            paras = [s for s in doc.sections if s.type == SectionType.PARAGRAPH]
+            self.assertEqual(len(paras), 2)
+
+    def test_switching_blocks_flushes(self):
+        content = """First line
+- list item
+Second para
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "flush.md", content)
+            doc = parse_markdown_file(md_path)
+            types = [s.type for s in doc.sections]
+            # Expect: paragraph, list, paragraph
+            self.assertEqual(types, [SectionType.PARAGRAPH, SectionType.LIST, SectionType.PARAGRAPH])
+
+    def test_empty_file_produces_no_sections(self):
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "empty.md", "")
+            doc = parse_markdown_file(md_path)
+            self.assertEqual(doc.sections, [])
+
+    def test_multiple_headers(self):
+        content = """# H1
+## H2
+### H3
+#### H4
+##### H5
+###### H6
+"""
+        with TemporaryDirectory() as td:
+            md_path = self._write_temp_md(td, "headers.md", content)
+            doc = parse_markdown_file(md_path)
+            depths = [s.header_depth for s in doc.sections if s.type == SectionType.HEADER]
+            self.assertEqual(depths, [1, 2, 3, 4, 5, 6])
+
+
+if __name__ == "__main__":
+    unittest.main()
