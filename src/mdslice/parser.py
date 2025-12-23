@@ -25,7 +25,7 @@ def _flush(
     content = "".join(buffer).rstrip("\n")
     md.add_section(
         ParsedSection(
-            type=sec_type, content=content, header_depth=header_depth, meta=meta
+            type=sec_type, content=content, depth=header_depth, meta=meta
         )
     )
     buffer.clear()
@@ -33,9 +33,6 @@ def _flush(
 
 def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
     """Parse an iterable of lines into a list of ParsedSection.
-
-    This is a lightweight, line-oriented parser intended for simple extraction
-    of major block-level elements, not a full CommonMark implementation.
     """
     md = MarkdownDocument()
     current_buffer: List[str] = []
@@ -80,7 +77,6 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
             flush_current()
             continue
 
-        # Fenced code block start
         m_open = _FENCE_OPEN_RE.match(stripped)
         if m_open:
             flush_current()
@@ -100,7 +96,7 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
             flush_current()
             hashes, content = m_header.groups()
             md.add_section(
-                ParsedSection(SectionType.HEADER, content.strip(), header_depth=len(hashes))
+                ParsedSection(SectionType.HEADER, content.strip(), depth=len(hashes))
             )
             continue
 
@@ -113,9 +109,10 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
             current_buffer.clear()
             current_type = SectionType.NONE
             depth = 1 if m1 else 2
-            md.add_section(ParsedSection(SectionType.HEADER, content, header_depth=depth))
+            md.add_section(ParsedSection(SectionType.HEADER, content, depth=depth))
             continue
 
+        # Pattern search for list, table, etc.
         matched = False
         for regex, sec_type in PATTERNS:
             if regex.match(stripped):
@@ -130,6 +127,7 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
                 matched = True
                 break
 
+        # Flush last section
         if not matched:
             if current_type not in (SectionType.NONE, SectionType.PARAGRAPH):
                 flush_current()

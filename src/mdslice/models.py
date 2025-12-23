@@ -29,16 +29,19 @@ class ParsedSection:
     """
     type: SectionType
     content: str
-    header_depth: int = 0
+    depth: int = 0
+    # todo: Header_depth should be under meta
     meta: Optional[dict[str, Any]] = None
 
     def is_header(self) -> bool:
         return self.type == SectionType.HEADER
 
     def __str__(self) -> str:
+        _str = f"<{self.type.name}: {self.content!r}>"
+        return _str
         if self.type == SectionType.HEADER:
-            return f"<HEADER h{self.header_depth}: {self.content!r}>"
-        return f"<{self.type.name}: {self.content!r}>"
+            return f"<HEADER h{self.depth}: {self.content!r}>"
+
 
 
 class MarkdownDocument:
@@ -71,7 +74,7 @@ class MarkdownDocument:
                 {
                     "type": s.type.name,
                     "content": s.content,
-                    "header_depth": s.header_depth,
+                    "header_depth": s.depth,
                     **({"meta": s.meta} if s.meta is not None else {}),
                 }
                 for s in self.sections
@@ -83,9 +86,9 @@ class MarkdownDocument:
     ) -> List[ParsedSection]:
         result = [s for s in self.sections if s.type == SectionType.HEADER]
         if min_depth is not None:
-            result = [s for s in result if s.header_depth >= min_depth]
+            result = [s for s in result if s.depth >= min_depth]
         if max_depth is not None:
-            result = [s for s in result if s.header_depth <= max_depth]
+            result = [s for s in result if s.depth <= max_depth]
         return result
 
     def find(
@@ -93,7 +96,15 @@ class MarkdownDocument:
     ) -> Optional[ParsedSection]:
         return next((s for s in self.sections if predicate(s)), None)
 
-    # End of class
+    @property
+    def path(self):
+        return self._path
+
+    @path.setter
+    def path(self, f_path: Path) -> None:
+        if isinstance(f_path, str):
+            self._path = Path(f_path)
+        self._path = f_path
 
     def of_type(self):
         ...
@@ -107,8 +118,3 @@ class MarkdownDocument:
 
     def plain_markdown(self): ...
     '''Should reconstruct markdown from the self.sections'''
-
-    @classmethod
-    def _unused(cls):
-        # placeholder to keep search/replace boundaries clear (no-op)
-        return None

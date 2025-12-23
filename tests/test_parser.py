@@ -53,7 +53,7 @@ class TestParser(unittest.TestCase):
             # Validate first section is a header h1
             first = doc.sections[0]
             self.assertEqual(first.type, SectionType.HEADER)
-            self.assertEqual(first.header_depth, 1)
+            self.assertEqual(first.depth, 1)
             self.assertEqual(first.content, "Title")
 
             # Validate paragraph aggregation
@@ -126,7 +126,7 @@ Second para
         with TemporaryDirectory() as td:
             md_path = self._write_temp_md(td, "headers.md", content)
             doc = parse_markdown_file(md_path)
-            depths = [s.header_depth for s in doc.sections if s.type == SectionType.HEADER]
+            depths = [s.depth for s in doc.sections if s.type == SectionType.HEADER]
             self.assertEqual(depths, [1, 2, 3, 4, 5, 6])
 
     def test_complex_code_blocks(self):
@@ -181,9 +181,9 @@ Paragraph
             headers = [s for s in doc.sections if s.type == SectionType.HEADER]
             self.assertEqual(len(headers), 2)
             self.assertEqual(headers[0].content, "Title 1")
-            self.assertEqual(headers[0].header_depth, 1)
+            self.assertEqual(headers[0].depth, 1)
             self.assertEqual(headers[1].content, "Title 2")
-            self.assertEqual(headers[1].header_depth, 2)
+            self.assertEqual(headers[1].depth, 2)
 
 
 if __name__ == "__main__":
