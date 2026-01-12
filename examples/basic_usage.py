@@ -9,7 +9,6 @@ def main():
 
     for sec in md_doc.sections:
         print(sec)
-        pass
 
     print(md_doc.to_dict())
 

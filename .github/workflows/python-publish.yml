@@ -1,4 +1,4 @@
-# This workflow will upload a Python Package to PyPI when a release is created
+# This workflow uploads a Python Package to PyPI when a release is created by using uv
 
 name: Upload Python Package
 
@@ -30,4 +30,3 @@ jobs:
         run: uv run --isolated --no-project --with dist/*.tar.gz tests/smoke_test.py
       - name: Publish
         run: uv publish
-        
