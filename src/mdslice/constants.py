@@ -22,4 +22,4 @@ PATTERNS = [
     (_LIST_RE, SectionType.LIST),
 ]
 
-DEPTH = 'depth'
+DEPTH = "depth"

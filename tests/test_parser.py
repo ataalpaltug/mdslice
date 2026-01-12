@@ -82,7 +82,9 @@ Second para
             doc = parse_markdown_file(md_path)
             types = [s.type for s in doc.sections]
             # Expect: paragraph, list, paragraph
-            self.assertEqual(types, [SectionType.PARAGRAPH, SectionType.LIST, SectionType.PARAGRAPH])
+            self.assertEqual(
+                types, [SectionType.PARAGRAPH, SectionType.LIST, SectionType.PARAGRAPH]
+            )
 
     def test_empty_file_produces_no_sections(self):
         with TemporaryDirectory() as td:
@@ -139,7 +141,7 @@ Paragraph
                 SectionType.LIST,
                 SectionType.QUOTE,
                 SectionType.TABLE,
-                SectionType.IMAGE
+                SectionType.IMAGE,
             ]
             self.assertEqual(types, expected)
 

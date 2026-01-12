@@ -18,7 +18,7 @@ class SectionType(IntEnum):
     QUOTE = auto()
 
 
-#@dataclass(slots=True) todo: check memory with slots
+# @dataclass(slots=True) todo: check memory with slots
 @dataclass
 class ParsedSection:
     """A parsed, typed chunk of Markdown content.
@@ -27,6 +27,7 @@ class ParsedSection:
     - For headers, `header_depth` is 1-6 according to the leading `#` count.
     - Optional `meta` can carry extra information (e.g., code block language).
     """
+
     type: SectionType
     content: str
     depth: int = 0
@@ -37,6 +38,7 @@ class ParsedSection:
 
     def __str__(self) -> str:
         return f"<{self.type.name}: {self.content!r}>"
+
 
 class MarkdownDocument:
     def __init__(
@@ -96,15 +98,16 @@ class MarkdownDocument:
             self._path = Path(f_path)
         self._path = f_path
 
-    def of_type(self):
-        ...
+    def of_type(self): ...
 
     def __getitem__(self): ...
 
     def __iter__(self): ...
 
     def search(self): ...
-    '''Should allow the user to search by regex'''
+
+    """Should allow the user to search by regex"""
 
     def plain_markdown(self): ...
-    '''Should reconstruct markdown from the self.sections'''
+
+    """Should reconstruct markdown from the self.sections"""

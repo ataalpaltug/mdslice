@@ -7,17 +7,19 @@ from mdslice import ParsedSection, SectionType
 class TestModels(unittest.TestCase):
     def test_section_type_membership(self):
         names = {e.name for e in SectionType}
-        self.assertTrue({
-            "NONE",
-            "HEADER",
-            "INFO",
-            "PARAGRAPH",
-            "LIST",
-            "CODE",
-            "TABLE",
-            "IMAGE",
-            "QUOTE",
-        }.issubset(names))
+        self.assertTrue(
+            {
+                "NONE",
+                "HEADER",
+                "INFO",
+                "PARAGRAPH",
+                "LIST",
+                "CODE",
+                "TABLE",
+                "IMAGE",
+                "QUOTE",
+            }.issubset(names)
+        )
 
     def test_parsed_section_is_header_and_defaults(self):
         # Non-header defaults to header_depth 0

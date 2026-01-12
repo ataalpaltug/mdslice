@@ -19,6 +19,7 @@ def from_text(text: str) -> MarkdownDocument:
     lines = text.splitlines(keepends=True)
     return parse_lines(lines)
 
+
 def check_path(file_path: Union[Path, str]) -> Path:
     if not isinstance(file_path, Path):
         file_path = Path(file_path)

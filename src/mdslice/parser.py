@@ -24,16 +24,13 @@ def _flush(
         return
     content = "".join(buffer).rstrip("\n")
     md.add_section(
-        ParsedSection(
-            type=sec_type, content=content, depth=header_depth, meta=meta
-        )
+        ParsedSection(type=sec_type, content=content, depth=header_depth, meta=meta)
     )
     buffer.clear()
 
 
 def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
-    """Parse an iterable of lines into a list of ParsedSection.
-    """
+    """Parse an iterable of lines into a list of ParsedSection."""
     md = MarkdownDocument()
     current_buffer: List[str] = []
     current_type: SectionType = SectionType.NONE
@@ -49,7 +46,11 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
         if current_type == SectionType.NONE:
             return
 
-        meta = {"lang": code_lang} if current_type == SectionType.CODE and code_lang else None
+        meta = (
+            {"lang": code_lang}
+            if current_type == SectionType.CODE and code_lang
+            else None
+        )
         _flush(current_buffer, md, current_type, current_header_depth, meta=meta)
         current_type = SectionType.NONE
         current_header_depth = 0
