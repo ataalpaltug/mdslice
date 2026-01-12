@@ -5,7 +5,7 @@ from pathlib import Path
 from tempfile import TemporaryDirectory
 
 from mdslice import parse_markdown_file, SectionType
-from tests.constants import MD_SAMPLE
+from tests.test_data import MD_SAMPLE
 
 
 class TestParser(unittest.TestCase):
