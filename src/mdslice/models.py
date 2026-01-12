@@ -7,6 +7,12 @@ from typing import Optional, Any, List, Callable
 
 
 class SectionType(IntEnum):
+    """
+    Represents different types of sections used within a document or content structure.
+
+    This enumeration provides constants to identify and differentiate sections.
+    """
+
     NONE = auto()
     HEADER = auto()
     INFO = auto()
@@ -21,11 +27,26 @@ class SectionType(IntEnum):
 # @dataclass(slots=True) todo: check memory with slots
 @dataclass
 class ParsedSection:
-    """A parsed, typed chunk of Markdown content.
+    """
+    Represents a parsed section of a document.
 
-    - For non-header sections, `header_depth` remains 0.
-    - For headers, `header_depth` is 1-6 according to the leading `#` count.
-    - Optional `meta` can carry extra information (e.g., code block language).
+    This class is used to model a section of a document that has been parsed.
+    It holds details about the section's type, content, depth in the document
+    hierarchy, and any associated metadata. This is useful for organizing and
+    processing structured documents.
+
+    :ivar type: The type of the section, typically indicating
+        its role (e.g., HEADER, PARAGRAPH, etc.).
+    :type type: SectionType
+    :ivar content: The textual content of the section.
+    :type content: str
+    :ivar depth: The hierarchical depth of the section within the
+        document, defaulting to 0 if not specified.
+    :type depth: int
+    :ivar meta: Additional metadata associated with the section,
+        such as attributes or properties. Default is None if no
+        metadata is provided.
+    :type meta: Optional[dict[str, Any]]
     """
 
     type: SectionType
@@ -41,6 +62,20 @@ class ParsedSection:
 
 
 class MarkdownDocument:
+    """
+    Represents a markdown document composed of parsed sections and an optional file path.
+
+    This class provides functionality to manage the structure of a markdown document,
+    including adding sections, associating a file path, and converting the document
+    into a dictionary format. It also supports filtering and searching operations
+    on the document's headers or sections.
+
+    :ivar sections: A list of parsed sections that compose the markdown document.
+    :type sections: List[ParsedSection]
+    :ivar path: An optional file path associated with the markdown document.
+    :type path: Optional[Path]
+    """
+
     def __init__(
         self,
         sections: Optional[List[ParsedSection]] = None,

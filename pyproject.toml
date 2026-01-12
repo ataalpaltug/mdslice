@@ -1,6 +1,6 @@
 [project]
 name = "mdslice"
-version = "0.1.0"
+version = "0.2.0"
 description = "Package to slicing, parsing, and manipulating Markdown Files"
 readme = "README.md"
 authors = [

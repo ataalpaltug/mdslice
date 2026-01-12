@@ -20,6 +20,24 @@ def _flush(
     header_depth: int = 0,
     meta: Optional[dict[str, Any]] = None,
 ) -> None:
+    """
+    Flushes the provided buffer content into a MarkdownDocument section and clears the buffer.
+
+    This function processes the accumulated text content in the buffer and appends it as a
+    section to the specified MarkdownDocument instance. It is primarily responsible for creating
+    a section with the given type, content, header depth, and optional metadata. Once the section
+    is added, the buffer is cleared to allow for subsequent content accumulation.
+
+    :param buffer: A list of strings representing the accumulated content to process and add
+        to the MarkdownDocument. If empty, no operation will be performed.
+    :param md: The MarkdownDocument instance to which the new section will be added.
+    :param sec_type: The SectionType defining the type of section to be created.
+    :param header_depth: The depth of the section's header, often based on its hierarchical
+        level. Default is 0.
+    :param meta: An optional dictionary containing metadata associated with the section.
+
+    :return: None
+    """
     if not buffer:
         return
     content = "".join(buffer).rstrip("\n")
@@ -30,7 +48,21 @@ def _flush(
 
 
 def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
-    """Parse an iterable of lines into a list of ParsedSection."""
+    """
+    Parses an iterable of strings into a structured Markdown document.
+
+    This function processes lines of text and constructs a `MarkdownDocument` object by
+    interpreting various Markdown elements such as headers, code blocks, lists, tables,
+    and paragraphs. It handles both fenced and indented code blocks, Setext-style headers,
+    and other Markdown-specific features. The function ensures each recognized Markdown
+    section is appropriately parsed and added to the hierarchical structure of the output.
+
+    :param lines: An iterable of strings representing lines of a Markdown document.
+        Each string should represent a single line, and newlines should already be stripped.
+    :return: A `MarkdownDocument` instance containing the structured representation of
+        the parsed Markdown input.
+    :rtype: MarkdownDocument
+    """
     md = MarkdownDocument()
     current_buffer: List[str] = []
     current_type: SectionType = SectionType.NONE
