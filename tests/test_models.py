@@ -35,4 +35,4 @@ class TestModels(unittest.TestCase):
         self.assertEqual(str(header), "<HEADER: 'Title'>")
 
         p = ParsedSection(type=SectionType.PARAGRAPH, content="Some text")
-        self.assertEqual(str(header), "<PARAGRAPH: 'Some text'>")
+        self.assertEqual(str(p), "<PARAGRAPH: 'Some text'>")
