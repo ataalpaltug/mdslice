@@ -1,7 +1,7 @@
 [project]
 name = "mdslice"
 version = "0.1.0"
-description = "Add your description here"
+description = "Package to slicing, parsing, and manipulating Markdown Files"
 readme = "README.md"
 authors = [
     { name = "Altug Ataalp", email = "ataalpaltug@gmail.com" }
