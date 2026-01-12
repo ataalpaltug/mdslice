@@ -21,3 +21,5 @@ PATTERNS = [
     (_QUOTE_RE, SectionType.QUOTE),
     (_LIST_RE, SectionType.LIST),
 ]
+
+DEPTH = 'depth'

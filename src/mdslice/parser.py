@@ -46,12 +46,14 @@ def parse_lines(lines: Iterable[str]) -> MarkdownDocument:
 
     def flush_current():
         nonlocal md, current_type, current_header_depth, code_lang
-        if current_type != SectionType.NONE:
-            meta = {"lang": code_lang} if current_type == SectionType.CODE and code_lang else None
-            _flush(current_buffer, md, current_type, current_header_depth, meta=meta)
-            current_type = SectionType.NONE
-            current_header_depth = 0
-            code_lang = None
+        if current_type == SectionType.NONE:
+            return
+
+        meta = {"lang": code_lang} if current_type == SectionType.CODE and code_lang else None
+        _flush(current_buffer, md, current_type, current_header_depth, meta=meta)
+        current_type = SectionType.NONE
+        current_header_depth = 0
+        code_lang = None
 
     for raw_line in lines:
         line = raw_line.rstrip("\n")

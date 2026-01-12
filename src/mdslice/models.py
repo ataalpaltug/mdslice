@@ -30,25 +30,15 @@ class ParsedSection:
     type: SectionType
     content: str
     depth: int = 0
-    # todo: Header_depth should be under meta
     meta: Optional[dict[str, Any]] = None
 
     def is_header(self) -> bool:
         return self.type == SectionType.HEADER
 
     def __str__(self) -> str:
-        _str = f"<{self.type.name}: {self.content!r}>"
-        return _str
-        if self.type == SectionType.HEADER:
-            return f"<HEADER h{self.depth}: {self.content!r}>"
-
-
+        return f"<{self.type.name}: {self.content!r}>"
 
 class MarkdownDocument:
-    """Object-oriented representation of a Markdown file and its parsed sections."""
-    # todo: Front Matter support
-    # todo: make this class Context Managers
-
     def __init__(
         self,
         sections: Optional[List[ParsedSection]] = None,

@@ -32,7 +32,7 @@ class TestModels(unittest.TestCase):
 
     def test_parsed_section_str_formats(self):
         header = ParsedSection(type=SectionType.HEADER, content="Title", depth=3)
-        self.assertEqual(str(header), "<HEADER h3: 'Title'>")
+        self.assertEqual(str(header), "<HEADER: 'Title'>")
 
         p = ParsedSection(type=SectionType.PARAGRAPH, content="Some text")
         self.assertEqual(str(header), "<PARAGRAPH: 'Some text'>")

@@ -1,88 +1,63 @@
 from __future__ import annotations
 
-import io
-import sys
 import unittest
 from pathlib import Path
 from tempfile import TemporaryDirectory
 
-from mdslice import MarkdownDocument, parse_markdown_file, SectionType
-
-
-MD_SAMPLE = """# Title
-
-Paragraph line 1
-continues here
-
-- item one
-- item two
-
-> quote line 1
-> quote line 2
-
-```
-code
-block
-```
-
-| h1 | h2 |
-|----|----|
-| a  | b  |
-
-![alt](path/to/img.png)
-"""
+from mdslice import parse_markdown_file, SectionType
+from tests.constants import MD_SAMPLE
 
 
 class TestParser(unittest.TestCase):
-    def _write_temp_md(self, tmpdir: str, name: str, content: str) -> Path:
-        p = Path(tmpdir) / name
-        p.write_text(content, encoding="utf-8")
-        return p
+    def _write_temp_md(self, tmp_dir: str, name: str, content: str) -> Path:
+        md_path = Path(tmp_dir) / name
+        md_path.write_text(content, encoding="utf-8")
+        return md_path
 
     def test_parse_markdown_document_and_path(self):
         with TemporaryDirectory() as td:
             md_path = self._write_temp_md(td, "sample.md", MD_SAMPLE)
-            doc = parse_markdown_file(md_path)
+            md_doc = parse_markdown_file(md_path)
 
             # Path retained
-            self.assertEqual(Path(md_path), doc.path)
+            self.assertEqual(Path(md_path), md_doc.path)
 
             # Ensure we have multiple sections parsed
-            self.assertGreaterEqual(len(doc.sections), 7)
+            self.assertEqual(len(md_doc.sections), 7)
 
             # Validate first section is a header h1
-            first = doc.sections[0]
+            first = md_doc.sections[0]
             self.assertEqual(first.type, SectionType.HEADER)
             self.assertEqual(first.depth, 1)
             self.assertEqual(first.content, "Title")
 
             # Validate paragraph aggregation
-            para = next(s for s in doc.sections if s.type == SectionType.PARAGRAPH)
+            para = next(s for s in md_doc.sections if s.type == SectionType.PARAGRAPH)
             self.assertIn("Paragraph line 1", para.content)
             self.assertIn("continues here", para.content)
 
             # Validate list grouping
-            lst = next(s for s in doc.sections if s.type == SectionType.LIST)
+            lst = next(s for s in md_doc.sections if s.type == SectionType.LIST)
             self.assertIn("- item one", lst.content)
             self.assertIn("- item two", lst.content)
 
             # Validate quote grouping
-            quote = next(s for s in doc.sections if s.type == SectionType.QUOTE)
+            quote = next(s for s in md_doc.sections if s.type == SectionType.QUOTE)
             self.assertIn("> quote line 1", quote.content)
             self.assertIn("> quote line 2", quote.content)
 
             # Validate code block preserves fences
-            code = next(s for s in doc.sections if s.type == SectionType.CODE)
+            code = next(s for s in md_doc.sections if s.type == SectionType.CODE)
             self.assertTrue(code.content.startswith("```\n"))
             self.assertTrue(code.content.rstrip("\n").endswith("\n```"))
 
             # Validate table grouping
-            table = next(s for s in doc.sections if s.type == SectionType.TABLE)
+            table = next(s for s in md_doc.sections if s.type == SectionType.TABLE)
             self.assertIn("| h1 | h2 |", table.content)
             self.assertIn("|----|----|", table.content)
 
             # Validate image detection
-            image = next(s for s in doc.sections if s.type == SectionType.IMAGE)
+            image = next(s for s in md_doc.sections if s.type == SectionType.IMAGE)
             self.assertEqual(image.content.strip(), "![alt](path/to/img.png)")
 
     def test_blank_line_and_nbsp_flush(self):

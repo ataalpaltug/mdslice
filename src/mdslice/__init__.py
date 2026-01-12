@@ -1,4 +1,4 @@
-from .main_functions import parse_markdown_file
+from .main import parse_markdown_file
 from .models import SectionType, ParsedSection, MarkdownDocument
 
 __all__ = [
